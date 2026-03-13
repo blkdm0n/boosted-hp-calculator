@@ -558,6 +558,16 @@
       </select>
     </div>
 
+    <div class="field">
+      <label>Tire &amp; Launch Setup <span style="font-size:0.7rem;color:var(--accent);font-weight:400;text-transform:none">(affects Beat These Cars)</span></label>
+      <select id="launch-setup" onchange="calculate()">
+        <option value="1.05">All-season / casual launch</option>
+        <option value="1.00" selected>Performance tires / decent launch</option>
+        <option value="0.97">Drag radials / prepped 60ft</option>
+        <option value="0.94">Slicks / race prep</option>
+      </select>
+    </div>
+
     <div class="note">
       <strong>How it works:</strong> Boost multiplies airflow by a pressure ratio vs atmospheric pressure (14.7 PSI). Estimated boosted HP = Base HP &times; ((14.7 + boost) / 14.7) &times; turbo efficiency &times; fuel multiplier.<br><br>
       <strong>E85:</strong> Ethanol's high octane (~113) and cooling effect (latent heat of vaporisation) allow more timing advance and denser charge air, typically adding 8–13% power on a properly tuned boosted engine. Results are estimates — actual gains depend on tune, intercooling, injector sizing, and engine limits.

@@ -79,7 +79,9 @@ function calculate() {
     riskText.textContent = 'High — built engine required';
   }
 
-  renderComparison(boostedBHP, weightLbs, drivetrainSel);
+  const launchFactor = parseFloat(document.getElementById('launch-setup').value);
+
+  renderComparison(boostedBHP, weightLbs, drivetrainSel, launchFactor);
   try { drawGauge(boostPSI, 60); } catch(e) { console.warn('Gauge error:', e); }
   try { updateChart(stockBHP, efficiency, fuelMultiplier, drivetrainRatio); } catch(e) { console.warn('Chart error:', e); }
 }
@@ -283,7 +285,7 @@ const PRODUCTION_CARS = [
 
 // ---- Estimate performance times from HP + weight ----
 // Uses the Hale/Hollander quarter-mile formula; 0-60 and 60-130 are derived empirically.
-function estimateTimes(hp, weightLbs, drivetrainSel) {
+function estimateTimes(hp, weightLbs, drivetrainSel, launchFactor = 1.0) {
   const wPerHp  = weightLbs / hp;
   const isAWD   = drivetrainSel === '0.78';
   const isFWD   = drivetrainSel === '0.88';
@@ -296,7 +298,13 @@ function estimateTimes(hp, weightLbs, drivetrainSel) {
   const rollFactor = isAWD ? 1.40 : isFWD ? 1.85 : 1.70;
   const r60130  = Math.max(3.0, wPerHp * rollFactor);
 
-  return { z60: +z60.toFixed(2), qmile: +qmile.toFixed(2), r60130: +r60130.toFixed(1) };
+  // launchFactor < 1 = faster times (better tires/launch prep)
+  // 60-130 is less dependent on launch, so apply a smaller fraction of it
+  return {
+    z60:    +(z60    * launchFactor).toFixed(2),
+    qmile:  +(qmile  * launchFactor).toFixed(2),
+    r60130: +(r60130 * (1 + (launchFactor - 1) * 0.5)).toFixed(1),
+  };
 }
 
 // ---- Tab switcher ----
@@ -305,13 +313,25 @@ function switchTab(tab) {
   document.getElementById('view-compare').classList.toggle('active', tab === 'compare');
   document.getElementById('tab-results').classList.toggle('active', tab === 'results');
   document.getElementById('tab-compare').classList.toggle('active', tab === 'compare');
-  if (tab === 'compare') calculate(); // always re-render comparison when tab opens
+  if (tab === 'compare') {
+    const launchFactor = parseFloat(document.getElementById('launch-setup').value);
+    const drivetrainSel = document.getElementById('drivetrain').value;
+    const drivetrainRatio = parseFloat(drivetrainSel);
+    const efficiency = parseFloat(document.getElementById('efficiency').value);
+    const fuelMultiplier = parseFloat(document.getElementById('fuel').value);
+    const boostPSI = Math.min(60, Math.max(1, parseFloat(document.getElementById('boost-input').value) || 1));
+    const inputHP = Math.max(1, parseFloat(document.getElementById('hp-input').value) || 0);
+    const weightLbs = Math.max(500, parseFloat(document.getElementById('weight-input').value) || 3500);
+    const stockBHP = hpType === 'whp' ? Math.round(inputHP / drivetrainRatio) : inputHP;
+    const boostedBHP = Math.round(stockBHP * ((ATM + boostPSI) / ATM) * efficiency * fuelMultiplier);
+    renderComparison(boostedBHP, weightLbs, drivetrainSel, launchFactor);
+  }
   if (boostChart) boostChart.resize();
 }
 
 // ---- Render comparison table ----
-function renderComparison(boostedBHP, weightLbs, drivetrainSel) {
-  const my = estimateTimes(boostedBHP, weightLbs, drivetrainSel);
+function renderComparison(boostedBHP, weightLbs, drivetrainSel, launchFactor = 1.0) {
+  const my = estimateTimes(boostedBHP, weightLbs, drivetrainSel, launchFactor);
 
   document.getElementById('your-z60').textContent    = my.z60    + 's';
   document.getElementById('your-qmile').textContent  = my.qmile  + 's';
@@ -341,9 +361,11 @@ function renderComparison(boostedBHP, weightLbs, drivetrainSel) {
       `<td class="metric-cell"><span class="${tdCls(beat,tie)}">${arrow(myT,carT,beat,tie)} ${carT}s</span></td>`;
 
     let badge, badgeCls;
-    if      (wins === 3)   { badge = '\u2713 Win All';  badgeCls = 'ob-beat'; }
-    else if (losses === 3) { badge = '\u2717 Lose All'; badgeCls = 'ob-lose'; }
-    else                   { badge = '\u007e Mixed';    badgeCls = 'ob-mix';  }
+    if      (wins === 3)   { badge = '\u2713 Wins all 3';  badgeCls = 'ob-beat'; }
+    else if (losses === 3) { badge = '\u2717 Loses all 3'; badgeCls = 'ob-lose'; }
+    else if (wins >= 2)    { badge = `\u2713 Wins ${wins}/3`;   badgeCls = 'ob-beat'; }
+    else if (losses >= 2)  { badge = `\u2717 Loses ${losses}/3`; badgeCls = 'ob-lose'; }
+    else                   { badge = `\u007e ${wins}W / ${losses}L`;  badgeCls = 'ob-mix';  }
 
     return `<tr class="${rowCls}">
       <td><div class="car-name">${car.name}</div><div class="car-stock">${car.hp} hp stock</div></td>
