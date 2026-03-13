@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Boosted HP Calculator</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:        #0d0f14;
+      --surface:   #161a23;
+      --surface2:  #1e2330;
+      --border:    #2b3045;
+      --accent:    #f97316;
+      --accent2:   #fb923c;
+      --text:      #e8eaf0;
+      --muted:     #7a8199;
+      --green:     #22c55e;
+      --red:       #ef4444;
+      --radius:    12px;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      min-height: 100vh;
+      padding: 24px 16px 48px;
+    }
+
+    header {
+      text-align: center;
+      margin-bottom: 36px;
+    }
+
+    header h1 {
+      font-size: clamp(1.6rem, 4vw, 2.4rem);
+      font-weight: 800;
+      letter-spacing: -0.5px;
+    }
+
+    header h1 span { color: var(--accent); }
+
+    header p {
+      color: var(--muted);
+      margin-top: 6px;
+      font-size: 0.95rem;
+    }
+
+    .layout {
+      display: grid;
+      grid-template-columns: 380px 1fr;
+      gap: 24px;
+      max-width: 1100px;
+      margin: 0 auto;
+    }
+
+    @media (max-width: 820px) {
+      .layout { grid-template-columns: 1fr; }
+    }
+
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 24px;
+    }
+
+    .card h2 {
+      font-size: 1rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: var(--muted);
+      margin-bottom: 20px;
+    }
+
+    /* ---- Form ---- */
+    .field { margin-bottom: 18px; }
+
+    label {
+      display: block;
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--muted);
+      margin-bottom: 6px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .toggle-group {
+      display: flex;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      overflow: hidden;
+    }
+
+    .toggle-group button {
+      flex: 1;
+      background: transparent;
+      border: none;
+      color: var(--muted);
+      padding: 10px 8px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.15s, color 0.15s;
+    }
+
+    .toggle-group button.active {
+      background: var(--accent);
+      color: #fff;
+    }
+
+    .input-wrap {
+      position: relative;
+      display: flex;
+      align-items: center;
+    }
+
+    .input-wrap input[type="number"] {
+      width: 100%;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--text);
+      font-size: 1.1rem;
+      font-weight: 600;
+      padding: 10px 60px 10px 14px;
+      outline: none;
+      transition: border-color 0.15s;
+      -moz-appearance: textfield;
+    }
+
+    .input-wrap input[type="number"]::-webkit-outer-spin-button,
+    .input-wrap input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
+
+    .input-wrap input[type="number"]:focus { border-color: var(--accent); }
+
+    .unit-badge {
+      position: absolute;
+      right: 12px;
+      font-size: 0.8rem;
+      font-weight: 700;
+      color: var(--muted);
+      pointer-events: none;
+    }
+
+    .slider-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-top: 8px;
+    }
+
+    input[type="range"] {
+      flex: 1;
+      accent-color: var(--accent);
+      height: 4px;
+      cursor: pointer;
+    }
+
+    .slider-val {
+      font-size: 0.85rem;
+      font-weight: 700;
+      color: var(--accent);
+      min-width: 52px;
+      text-align: right;
+    }
+
+    /* ---- Results ---- */
+    .result-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+      margin-bottom: 20px;
+    }
+
+    .stat-box {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 16px;
+      text-align: center;
+    }
+
+    .stat-box .label {
+      font-size: 0.72rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      color: var(--muted);
+      margin-bottom: 6px;
+    }
+
+    .stat-box .value {
+      font-size: 1.9rem;
+      font-weight: 800;
+      line-height: 1;
+    }
+
+    .stat-box .sub {
+      font-size: 0.75rem;
+      color: var(--muted);
+      margin-top: 4px;
+    }
+
+    .stat-box.highlight { border-color: var(--accent); }
+    .stat-box.highlight .value { color: var(--accent); }
+
+    .stat-box.gain .value { color: var(--green); }
+
+    /* gauge */
+    .gauge-wrap {
+      display: flex;
+      justify-content: center;
+      margin: 16px 0 8px;
+    }
+
+    canvas.gauge { display: block; }
+
+    /* boost risk badge */
+    .risk-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 14px;
+      border-radius: 999px;
+      font-size: 0.8rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .risk-badge .dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+    }
+
+    .risk-low    { background: rgba(34,197,94,0.15);  color: var(--green); }
+    .risk-low    .dot { background: var(--green); }
+    .risk-med    { background: rgba(249,115,22,0.15); color: var(--accent); }
+    .risk-med    .dot { background: var(--accent); }
+    .risk-high   { background: rgba(239,68,68,0.15);  color: var(--red); }
+    .risk-high   .dot { background: var(--red); }
+
+    .risk-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-top: 16px;
+      padding-top: 16px;
+      border-top: 1px solid var(--border);
+    }
+
+    .risk-row span { font-size: 0.82rem; color: var(--muted); }
+
+    /* chart panel */
+    .chart-wrap {
+      position: relative;
+      height: 280px;
+    }
+
+    /* info note */
+    .note {
+      font-size: 0.76rem;
+      color: var(--muted);
+      margin-top: 16px;
+      line-height: 1.55;
+      padding-top: 14px;
+      border-top: 1px solid var(--border);
+    }
+
+    /* efficiency select */
+    select {
+      width: 100%;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--text);
+      font-size: 0.95rem;
+      font-weight: 600;
+      padding: 10px 14px;
+      outline: none;
+      cursor: pointer;
+      transition: border-color 0.15s;
+      appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%237a8199' stroke-width='2.5'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 14px center;
+    }
+
+    select:focus { border-color: var(--accent); }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>Boosted <span>HP</span> Calculator</h1>
+  <p>Estimate the horsepower gains from adding turbocharger boost to your engine</p>
+</header>
+
+<div class="layout">
+
+  <!-- ===== INPUT PANEL ===== -->
+  <div class="card">
+    <h2>Engine Setup</h2>
+
+    <div class="field">
+      <label>HP Measurement Type</label>
+      <div class="toggle-group">
+        <button id="btn-whp" class="active" onclick="setHpType('whp')">Wheel HP (WHP)</button>
+        <button id="btn-chp" onclick="setHpType('chp')">Crank HP (BHP)</button>
+      </div>
+    </div>
+
+    <div class="field">
+      <label id="hp-label">Current Wheel HP (WHP)</label>
+      <div class="input-wrap">
+        <input type="number" id="hp-input" value="250" min="50" max="3000" oninput="calculate()" />
+        <span class="unit-badge">hp</span>
+      </div>
+    </div>
+
+    <div class="field">
+      <label>Drivetrain Layout</label>
+      <select id="drivetrain" onchange="calculate()">
+        <option value="0.85">RWD — ~15% loss</option>
+        <option value="0.88">FWD — ~12% loss</option>
+        <option value="0.78">AWD — ~22% loss</option>
+      </select>
+    </div>
+
+    <div class="field">
+      <label>Turbo / Boost Pressure</label>
+      <div class="input-wrap">
+        <input type="number" id="boost-input" value="10" min="1" max="60" oninput="syncSlider()" />
+        <span class="unit-badge">PSI</span>
+      </div>
+      <div class="slider-row">
+        <input type="range" id="boost-slider" min="1" max="60" value="10" oninput="syncBoost()" />
+        <span class="slider-val" id="slider-label">10 PSI</span>
+      </div>
+    </div>
+
+    <div class="field">
+      <label>Turbo Efficiency Estimate</label>
+      <select id="efficiency" onchange="calculate()">
+        <option value="0.75">Moderate — 75% (budget turbo / poor tune)</option>
+        <option value="0.80" selected>Good — 80% (typical street build)</option>
+        <option value="0.85">High — 85% (quality turbo / good tune)</option>
+        <option value="0.90">Excellent — 90% (race-grade setup)</option>
+      </select>
+    </div>
+
+    <div class="field">
+      <label>Fuel Type</label>
+      <select id="fuel" onchange="calculate()">
+        <option value="1.00">Pump Gas (E10 / 91–93 oct)</option>
+        <option value="1.10">E85 — ~10% gain (proper tune)</option>
+        <option value="1.13">E85 — ~13% gain (optimised tune)</option>
+        <option value="1.05">Race Gas (100–110 oct)</option>
+      </select>
+    </div>
+
+    <div class="note">
+      <strong>How it works:</strong> Boost multiplies airflow by a pressure ratio vs atmospheric pressure (14.7 PSI). Estimated boosted HP = Base HP &times; ((14.7 + boost) / 14.7) &times; turbo efficiency &times; fuel multiplier.<br><br>
+      <strong>E85:</strong> Ethanol's high octane (~113) and cooling effect (latent heat of vaporisation) allow more timing advance and denser charge air, typically adding 8–13% power on a properly tuned boosted engine. Results are estimates — actual gains depend on tune, intercooling, injector sizing, and engine limits.
+    </div>
+  </div>
+
+  <!-- ===== RESULTS PANEL ===== -->
+  <div>
+    <div class="card" style="margin-bottom:24px;">
+      <h2>Results</h2>
+
+      <div class="gauge-wrap">
+        <canvas class="gauge" id="gauge-canvas" width="260" height="140"></canvas>
+      </div>
+
+      <div class="result-grid">
+        <div class="stat-box">
+          <div class="label">Stock WHP</div>
+          <div class="value" id="res-stock-whp">250</div>
+          <div class="sub">wheel hp</div>
+        </div>
+        <div class="stat-box">
+          <div class="label">Stock BHP</div>
+          <div class="value" id="res-stock-bhp">294</div>
+          <div class="sub">crank hp</div>
+        </div>
+        <div class="stat-box highlight">
+          <div class="label">Boosted WHP</div>
+          <div class="value" id="res-boost-whp">—</div>
+          <div class="sub">wheel hp</div>
+        </div>
+        <div class="stat-box highlight">
+          <div class="label">Boosted BHP</div>
+          <div class="value" id="res-boost-bhp">—</div>
+          <div class="sub">crank hp</div>
+        </div>
+        <div class="stat-box gain" style="grid-column: 1/-1;">
+          <div class="label">Estimated HP Gain</div>
+          <div class="value" id="res-gain">+0 hp</div>
+          <div class="sub" id="res-gain-pct">0% increase vs stock</div>
+        </div>
+      </div>
+
+      <div class="risk-row">
+        <span>Build risk level at this boost:</span>
+        <span class="risk-badge" id="risk-badge">
+          <span class="dot"></span>
+          <span id="risk-text">—</span>
+        </span>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>HP vs Boost Curve</h2>
+      <div class="chart-wrap">
+        <canvas id="boost-chart"></canvas>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script src="calculator.js"></script>
+</body>
+</html>
