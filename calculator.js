@@ -255,9 +255,6 @@ function updateChart(stockBHP, efficiency, fuelMultiplier, drivetrainRatio) {
   });
 }
 
-// Initialise
-calculate();
-
 // ---- Production car database (real-world tested times) ----
 const PRODUCTION_CARS = [
   { name: 'Honda Civic Type R (FL5)',     hp: 315,  z60: 5.2,  qmile: 13.7, r60130: 18.0 },
@@ -356,3 +353,6 @@ function renderComparison(boostedBHP, weightLbs, drivetrainSel) {
     </tr>`;
   }).join('');
 }
+
+// Initialise
+calculate();
