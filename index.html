@@ -102,7 +102,45 @@
     .right-panel {
       display: flex;
       flex-direction: column;
-      gap: 12px;
+      gap: 8px;
+      min-height: 0;
+      overflow: hidden;
+    }
+
+    /* ---- Tabs ---- */
+    .tab-bar {
+      display: flex;
+      gap: 6px;
+      flex-shrink: 0;
+    }
+
+    .tab-btn {
+      flex: 1;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--muted);
+      font-size: 0.78rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      padding: 8px 12px;
+      cursor: pointer;
+      transition: background 0.15s, color 0.15s, border-color 0.15s;
+    }
+
+    .tab-btn.active {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: #fff;
+    }
+
+    .tab-view { display: none; }
+    .tab-view.active {
+      display: flex;
+      flex-direction: column;
+      flex: 1;
+      gap: 8px;
       min-height: 0;
       overflow: hidden;
     }
@@ -115,6 +153,112 @@
       display: flex;
       flex-direction: column;
     }
+
+    /* ---- Compare Panel ---- */
+    .compare-card {
+      flex: 1;
+      min-height: 0;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .your-times-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 8px;
+      margin-bottom: 8px;
+      flex-shrink: 0;
+    }
+
+    .your-time-box {
+      background: var(--surface2);
+      border: 1px solid var(--accent);
+      border-radius: 8px;
+      padding: 8px;
+      text-align: center;
+    }
+
+    .your-time-box .yt-label {
+      font-size: 0.62rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--muted);
+      margin-bottom: 2px;
+    }
+
+    .your-time-box .yt-val {
+      font-size: 1.15rem;
+      font-weight: 800;
+      color: var(--accent);
+    }
+
+    .compare-note {
+      font-size: 0.7rem;
+      color: var(--muted);
+      margin-bottom: 8px;
+      flex-shrink: 0;
+      line-height: 1.4;
+    }
+
+    .compare-table-wrap {
+      flex: 1;
+      overflow-y: auto;
+      min-height: 0;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+    }
+
+    .compare-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.76rem;
+    }
+
+    .compare-table th {
+      text-align: left;
+      color: var(--muted);
+      font-size: 0.65rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      padding: 8px 10px;
+      border-bottom: 1px solid var(--border);
+      position: sticky;
+      top: 0;
+      background: var(--surface2);
+      z-index: 1;
+    }
+
+    .compare-table td {
+      padding: 7px 10px;
+      border-bottom: 1px solid var(--border);
+      vertical-align: middle;
+    }
+
+    .compare-table tbody tr:last-child td { border-bottom: none; }
+    .compare-table tbody tr.row-beat { background: rgba(34,197,94,0.07); }
+    .compare-table tbody tr.row-lose { background: rgba(239,68,68,0.05); }
+
+    .car-name  { font-weight: 600; color: var(--text); }
+    .car-stock { font-size: 0.68rem; color: var(--muted); }
+    .metric-cell { text-align: right; }
+    .td-beat { color: var(--green); font-weight: 700; }
+    .td-lose { color: var(--red); }
+    .td-tie  { color: var(--muted); }
+
+    .overall-badge {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 999px;
+      font-size: 0.68rem;
+      font-weight: 700;
+    }
+
+    .ob-beat { background: rgba(34,197,94,0.15); color: var(--green); }
+    .ob-lose { background: rgba(239,68,68,0.12); color: var(--red); }
+    .ob-mix  { background: rgba(249,115,22,0.12); color: var(--accent); }
 
     /* ---- Form ---- */
     .field { margin-bottom: 10px; }
@@ -366,6 +510,14 @@
     </div>
 
     <div class="field">
+      <label>Vehicle Weight (curb + driver)</label>
+      <div class="input-wrap">
+        <input type="number" id="weight-input" value="3500" min="1000" max="8000" oninput="calculate()" />
+        <span class="unit-badge">lbs</span>
+      </div>
+    </div>
+
+    <div class="field">
       <label>Drivetrain Layout</label>
       <select id="drivetrain" onchange="calculate()">
         <option value="0.85">RWD — ~15% loss</option>
@@ -414,56 +566,106 @@
 
   <!-- ===== RESULTS PANEL ===== -->
   <div class="right-panel">
-    <div class="card results-card">
-      <h2>Results</h2>
 
-      <div class="gauge-wrap">
-        <canvas class="gauge" id="gauge-canvas" width="220" height="115"></canvas>
+    <!-- Tab bar -->
+    <div class="tab-bar">
+      <button class="tab-btn active" id="tab-results" onclick="switchTab('results')">&#x1F4CA; Results</button>
+      <button class="tab-btn" id="tab-compare" onclick="switchTab('compare')">&#x1F3C1; Beat These Cars</button>
+    </div>
+
+    <!-- Results view -->
+    <div id="view-results" class="tab-view active">
+      <div class="card results-card">
+        <h2>Results</h2>
+
+        <div class="gauge-wrap">
+          <canvas class="gauge" id="gauge-canvas" width="220" height="115"></canvas>
+        </div>
+
+        <div class="result-grid">
+          <div class="stat-box">
+            <div class="label">Stock WHP</div>
+            <div class="value" id="res-stock-whp">250</div>
+            <div class="sub">wheel hp</div>
+          </div>
+          <div class="stat-box">
+            <div class="label">Stock BHP</div>
+            <div class="value" id="res-stock-bhp">294</div>
+            <div class="sub">crank hp</div>
+          </div>
+          <div class="stat-box highlight">
+            <div class="label">Boosted WHP</div>
+            <div class="value" id="res-boost-whp">—</div>
+            <div class="sub">wheel hp</div>
+          </div>
+          <div class="stat-box highlight">
+            <div class="label">Boosted BHP</div>
+            <div class="value" id="res-boost-bhp">—</div>
+            <div class="sub">crank hp</div>
+          </div>
+          <div class="stat-box gain" style="grid-column: 1/-1;">
+            <div class="label">Estimated HP Gain</div>
+            <div class="value" id="res-gain">+0 hp</div>
+            <div class="sub" id="res-gain-pct">0% increase vs stock</div>
+          </div>
+        </div>
+
+        <div class="risk-row">
+          <span>Build risk level at this boost:</span>
+          <span class="risk-badge" id="risk-badge">
+            <span class="dot"></span>
+            <span id="risk-text">—</span>
+          </span>
+        </div>
       </div>
 
-      <div class="result-grid">
-        <div class="stat-box">
-          <div class="label">Stock WHP</div>
-          <div class="value" id="res-stock-whp">250</div>
-          <div class="sub">wheel hp</div>
+      <div class="card chart-card">
+        <h2>HP vs Boost Curve</h2>
+        <div class="chart-wrap">
+          <canvas id="boost-chart"></canvas>
         </div>
-        <div class="stat-box">
-          <div class="label">Stock BHP</div>
-          <div class="value" id="res-stock-bhp">294</div>
-          <div class="sub">crank hp</div>
-        </div>
-        <div class="stat-box highlight">
-          <div class="label">Boosted WHP</div>
-          <div class="value" id="res-boost-whp">—</div>
-          <div class="sub">wheel hp</div>
-        </div>
-        <div class="stat-box highlight">
-          <div class="label">Boosted BHP</div>
-          <div class="value" id="res-boost-bhp">—</div>
-          <div class="sub">crank hp</div>
-        </div>
-        <div class="stat-box gain" style="grid-column: 1/-1;">
-          <div class="label">Estimated HP Gain</div>
-          <div class="value" id="res-gain">+0 hp</div>
-          <div class="sub" id="res-gain-pct">0% increase vs stock</div>
-        </div>
-      </div>
-
-      <div class="risk-row">
-        <span>Build risk level at this boost:</span>
-        <span class="risk-badge" id="risk-badge">
-          <span class="dot"></span>
-          <span id="risk-text">—</span>
-        </span>
       </div>
     </div>
 
-    <div class="card chart-card">
-      <h2>HP vs Boost Curve</h2>
-      <div class="chart-wrap">
-        <canvas id="boost-chart"></canvas>
+    <!-- Compare view -->
+    <div id="view-compare" class="tab-view">
+      <div class="card compare-card">
+        <h2>Beat These Cars</h2>
+
+        <div class="your-times-row">
+          <div class="your-time-box">
+            <div class="yt-label">Your Est. 0-60</div>
+            <div class="yt-val" id="your-z60">—</div>
+          </div>
+          <div class="your-time-box">
+            <div class="yt-label">Your Est. &frac14; Mile</div>
+            <div class="yt-val" id="your-qmile">—</div>
+          </div>
+          <div class="your-time-box">
+            <div class="yt-label">Your Est. 60-130</div>
+            <div class="yt-val" id="your-r60130">—</div>
+          </div>
+        </div>
+
+        <p class="compare-note">&#x26A0; Estimates use the Hale/Hollander formula — assumes street tires, no launch control. Production times are real-world tested values. Green = you win, red = you lose.</p>
+
+        <div class="compare-table-wrap">
+          <table class="compare-table">
+            <thead>
+              <tr>
+                <th>Car</th>
+                <th style="text-align:right">0-60</th>
+                <th style="text-align:right">&frac14; Mile</th>
+                <th style="text-align:right">60-130</th>
+                <th style="text-align:center">Overall</th>
+              </tr>
+            </thead>
+            <tbody id="compare-tbody"></tbody>
+          </table>
+        </div>
       </div>
     </div>
+
   </div>
 
 </div>

@@ -27,11 +27,13 @@ function syncBoost() {
 }
 
 function calculate() {
-  const drivetrainRatio = parseFloat(document.getElementById('drivetrain').value);
+  const drivetrainSel   = document.getElementById('drivetrain').value;
+  const drivetrainRatio = parseFloat(drivetrainSel);
   const efficiency      = parseFloat(document.getElementById('efficiency').value);
   const fuelMultiplier  = parseFloat(document.getElementById('fuel').value);
   const boostPSI        = Math.min(60, Math.max(1, parseFloat(document.getElementById('boost-input').value) || 1));
   const inputHP         = Math.max(1, parseFloat(document.getElementById('hp-input').value) || 0);
+  const weightLbs       = Math.max(500, parseFloat(document.getElementById('weight-input').value) || 3500);
 
   // Derive stock WHP and BHP from input
   let stockWHP, stockBHP;
@@ -79,6 +81,7 @@ function calculate() {
 
   drawGauge(boostPSI, 60);
   updateChart(stockBHP, efficiency, fuelMultiplier, drivetrainRatio);
+  renderComparison(boostedBHP, weightLbs, drivetrainSel);
 }
 
 // ---- Gauge ----
@@ -254,3 +257,102 @@ function updateChart(stockBHP, efficiency, fuelMultiplier, drivetrainRatio) {
 
 // Initialise
 calculate();
+
+// ---- Production car database (real-world tested times) ----
+const PRODUCTION_CARS = [
+  { name: 'Honda Civic Type R (FL5)',     hp: 315,  z60: 5.2,  qmile: 13.7, r60130: 18.0 },
+  { name: 'Subaru WRX STI',              hp: 310,  z60: 4.8,  qmile: 13.2, r60130: 16.5 },
+  { name: 'VW Golf R (Mk8)',             hp: 315,  z60: 4.7,  qmile: 13.1, r60130: 16.0 },
+  { name: 'Toyota GR Supra (A90)',       hp: 382,  z60: 4.1,  qmile: 12.4, r60130: 13.5 },
+  { name: 'Ford Mustang GT',             hp: 450,  z60: 4.3,  qmile: 12.6, r60130: 14.5 },
+  { name: 'Chevrolet Camaro SS',         hp: 455,  z60: 4.0,  qmile: 12.3, r60130: 13.8 },
+  { name: 'Dodge Charger Scat Pack',     hp: 485,  z60: 4.2,  qmile: 12.4, r60130: 13.5 },
+  { name: 'Tesla Model 3 Performance',   hp: 450,  z60: 3.1,  qmile: 11.5, r60130: 11.5 },
+  { name: 'BMW M3 Competition (G80)',    hp: 503,  z60: 3.4,  qmile: 11.6, r60130: 11.8 },
+  { name: 'Cadillac CT5-V Blackwing',   hp: 668,  z60: 3.7,  qmile: 11.8, r60130: 11.2 },
+  { name: 'Chevrolet Corvette C8',       hp: 490,  z60: 2.9,  qmile: 11.2, r60130: 10.5 },
+  { name: 'Nissan GT-R (R35)',           hp: 565,  z60: 2.9,  qmile: 11.4, r60130: 10.0 },
+  { name: 'Porsche 911 Carrera S (992)', hp: 443,  z60: 3.5,  qmile: 11.7, r60130: 11.2 },
+  { name: 'Ford Mustang Shelby GT500',   hp: 760,  z60: 3.3,  qmile: 11.5, r60130: 10.0 },
+  { name: 'Dodge Challenger Hellcat',    hp: 717,  z60: 3.6,  qmile: 11.7, r60130: 10.2 },
+  { name: 'Porsche 911 Turbo S (992)',   hp: 640,  z60: 2.6,  qmile: 10.5, r60130:  7.8 },
+  { name: 'McLaren 720S',               hp: 710,  z60: 2.8,  qmile: 10.4, r60130:  7.2 },
+  { name: 'Ferrari 488 GTB',            hp: 661,  z60: 3.0,  qmile: 10.9, r60130:  8.5 },
+  { name: 'Lamborghini Huracán EVO',    hp: 631,  z60: 2.9,  qmile: 10.8, r60130:  8.2 },
+  { name: 'Dodge Challenger Demon 170', hp: 1025, z60: 1.66, qmile: 8.91, r60130:  6.8 },
+  { name: 'Tesla Model S Plaid',        hp: 1020, z60: 1.99, qmile: 9.23, r60130:  5.5 },
+  { name: 'Bugatti Chiron Sport',       hp: 1479, z60: 2.4,  qmile: 9.4,  r60130:  4.5 },
+];
+
+// ---- Estimate performance times from HP + weight ----
+// Uses the Hale/Hollander quarter-mile formula; 0-60 and 60-130 are derived empirically.
+function estimateTimes(hp, weightLbs, drivetrainSel) {
+  const wPerHp  = weightLbs / hp;
+  const isAWD   = drivetrainSel === '0.78';
+  const isFWD   = drivetrainSel === '0.88';
+
+  const qmile   = 6.269 * Math.pow(wPerHp, 1 / 3);
+
+  const launchAdj = isAWD ? -0.55 : isFWD ? -0.15 : -0.30;
+  const z60     = Math.max(1.4, 0.51 * qmile + launchAdj - 1.9);
+
+  const rollFactor = isAWD ? 1.40 : isFWD ? 1.85 : 1.70;
+  const r60130  = Math.max(3.0, wPerHp * rollFactor);
+
+  return { z60: +z60.toFixed(2), qmile: +qmile.toFixed(2), r60130: +r60130.toFixed(1) };
+}
+
+// ---- Tab switcher ----
+function switchTab(tab) {
+  document.getElementById('view-results').classList.toggle('active', tab === 'results');
+  document.getElementById('view-compare').classList.toggle('active', tab === 'compare');
+  document.getElementById('tab-results').classList.toggle('active', tab === 'results');
+  document.getElementById('tab-compare').classList.toggle('active', tab === 'compare');
+  if (tab === 'compare' && boostChart) boostChart.resize();
+}
+
+// ---- Render comparison table ----
+function renderComparison(boostedBHP, weightLbs, drivetrainSel) {
+  const my = estimateTimes(boostedBHP, weightLbs, drivetrainSel);
+
+  document.getElementById('your-z60').textContent    = my.z60    + 's';
+  document.getElementById('your-qmile').textContent  = my.qmile  + 's';
+  document.getElementById('your-r60130').textContent = my.r60130 + 's';
+
+  const tbody = document.getElementById('compare-tbody');
+  if (!tbody) return;
+
+  const sorted = [...PRODUCTION_CARS].sort((a, b) => a.z60 - b.z60);
+
+  tbody.innerHTML = sorted.map(car => {
+    const TIE_Z60   = 0.15, TIE_Q = 0.15, TIE_ROLL = 0.3;
+    const beatZ60   = my.z60    < car.z60   - TIE_Z60;
+    const beatQ     = my.qmile  < car.qmile - TIE_Q;
+    const beatRoll  = my.r60130 < car.r60130 - TIE_ROLL;
+    const tieZ60    = !beatZ60  && Math.abs(my.z60    - car.z60)    < TIE_Z60;
+    const tieQ      = !beatQ    && Math.abs(my.qmile  - car.qmile)  < TIE_Q;
+    const tieRoll   = !beatRoll && Math.abs(my.r60130 - car.r60130) < TIE_ROLL;
+
+    const wins   = [beatZ60, beatQ, beatRoll].filter(Boolean).length;
+    const losses = [!beatZ60 && !tieZ60, !beatQ && !tieQ, !beatRoll && !tieRoll].filter(Boolean).length;
+    const rowCls = wins >= 2 ? 'row-beat' : losses >= 2 ? 'row-lose' : '';
+
+    const tdCls = (beat, tie) => tie ? 'td-tie' : beat ? 'td-beat' : 'td-lose';
+    const arrow = (myT, carT, beat, tie) => tie ? '=' : beat ? '\u25bc' : '\u25b2';
+    const cell  = (myT, carT, beat, tie) =>
+      `<td class="metric-cell"><span class="${tdCls(beat,tie)}">${arrow(myT,carT,beat,tie)} ${carT}s</span></td>`;
+
+    let badge, badgeCls;
+    if      (wins === 3)   { badge = '\u2713 Win All';  badgeCls = 'ob-beat'; }
+    else if (losses === 3) { badge = '\u2717 Lose All'; badgeCls = 'ob-lose'; }
+    else                   { badge = '\u007e Mixed';    badgeCls = 'ob-mix';  }
+
+    return `<tr class="${rowCls}">
+      <td><div class="car-name">${car.name}</div><div class="car-stock">${car.hp} hp stock</div></td>
+      ${cell(my.z60,    car.z60,    beatZ60,  tieZ60)}
+      ${cell(my.qmile,  car.qmile,  beatQ,    tieQ)}
+      ${cell(my.r60130, car.r60130, beatRoll, tieRoll)}
+      <td style="text-align:center"><span class="overall-badge ${badgeCls}">${badge}</span></td>
+    </tr>`;
+  }).join('');
+}
