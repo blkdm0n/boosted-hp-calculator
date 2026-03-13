@@ -79,9 +79,9 @@ function calculate() {
     riskText.textContent = 'High — built engine required';
   }
 
-  drawGauge(boostPSI, 60);
-  updateChart(stockBHP, efficiency, fuelMultiplier, drivetrainRatio);
   renderComparison(boostedBHP, weightLbs, drivetrainSel);
+  try { drawGauge(boostPSI, 60); } catch(e) { console.warn('Gauge error:', e); }
+  try { updateChart(stockBHP, efficiency, fuelMultiplier, drivetrainRatio); } catch(e) { console.warn('Chart error:', e); }
 }
 
 // ---- Gauge ----
@@ -305,7 +305,8 @@ function switchTab(tab) {
   document.getElementById('view-compare').classList.toggle('active', tab === 'compare');
   document.getElementById('tab-results').classList.toggle('active', tab === 'results');
   document.getElementById('tab-compare').classList.toggle('active', tab === 'compare');
-  if (tab === 'compare' && boostChart) boostChart.resize();
+  if (tab === 'compare') calculate(); // always re-render comparison when tab opens
+  if (boostChart) boostChart.resize();
 }
 
 // ---- Render comparison table ----
