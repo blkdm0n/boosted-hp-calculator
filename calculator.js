@@ -259,10 +259,6 @@ function updateChart(stockBHP, efficiency, fuelMultiplier, drivetrainRatio) {
 
 // ---- Production car database (real-world tested times) ----
 const PRODUCTION_CARS = [
-  { name: 'Honda Civic Type R (FL5)',     hp: 315,  z60: 5.2,  qmile: 13.7, r60100: 10.3 },
-  { name: 'Subaru WRX STI',              hp: 310,  z60: 4.8,  qmile: 13.2, r60100:  9.4 },
-  { name: 'VW Golf R (Mk8)',             hp: 315,  z60: 4.7,  qmile: 13.1, r60100:  9.1 },
-  { name: 'Toyota GR Supra (A90)',       hp: 382,  z60: 4.1,  qmile: 12.4, r60100:  7.7 },
   { name: 'Ford Mustang GT',             hp: 450,  z60: 4.3,  qmile: 12.6, r60100:  8.3 },
   { name: 'Chevrolet Camaro SS',         hp: 455,  z60: 4.0,  qmile: 12.3, r60100:  7.9 },
   { name: 'Dodge Charger Scat Pack',     hp: 485,  z60: 4.2,  qmile: 12.4, r60100:  7.7 },
@@ -271,16 +267,23 @@ const PRODUCTION_CARS = [
   { name: 'Cadillac CT5-V Blackwing',   hp: 668,  z60: 3.7,  qmile: 11.8, r60100:  6.4 },
   { name: 'Chevrolet Corvette C8',       hp: 490,  z60: 2.9,  qmile: 11.2, r60100:  6.0 },
   { name: 'Nissan GT-R (R35)',           hp: 565,  z60: 2.9,  qmile: 11.4, r60100:  5.7 },
-  { name: 'Porsche 911 Carrera S (992)', hp: 443,  z60: 3.5,  qmile: 11.7, r60100:  6.4 },
   { name: 'Ford Mustang Shelby GT500',   hp: 760,  z60: 3.3,  qmile: 11.5, r60100:  5.7 },
   { name: 'Dodge Challenger Hellcat',    hp: 717,  z60: 3.6,  qmile: 11.7, r60100:  5.8 },
   { name: 'Porsche 911 Turbo S (992)',   hp: 640,  z60: 2.6,  qmile: 10.5, r60100:  4.4 },
   { name: 'McLaren 720S',               hp: 710,  z60: 2.8,  qmile: 10.4, r60100:  4.1 },
   { name: 'Ferrari 488 GTB',            hp: 661,  z60: 3.0,  qmile: 10.9, r60100:  4.8 },
   { name: 'Lamborghini Huracán EVO',    hp: 631,  z60: 2.9,  qmile: 10.8, r60100:  4.7 },
-  { name: 'Dodge Challenger Demon 170', hp: 1025, z60: 1.66, qmile: 8.91, r60100:  3.9 },
-  { name: 'Tesla Model S Plaid',        hp: 1020, z60: 1.99, qmile: 9.23, r60100:  3.1 },
-  { name: 'Bugatti Chiron Sport',       hp: 1479, z60: 2.4,  qmile: 9.4,  r60100:  2.6 },
+  { name: 'Dodge Challenger Demon 170',        hp: 1025, z60: 1.66, qmile: 8.91, r60100:  3.9 },
+  { name: 'Tesla Model S Plaid',               hp: 1020, z60: 1.99, qmile: 9.23, r60100:  3.1 },
+  { name: 'Bugatti Chiron Sport',              hp: 1479, z60: 2.4,  qmile: 9.4,  r60100:  2.6 },
+  { name: '1987 Buick Grand National',         hp: 245,  z60: 5.5,  qmile: 14.0, r60100: 10.0 },
+  { name: '1987 Buick GNX',                    hp: 276,  z60: 4.7,  qmile: 13.4, r60100:  8.8 },
+  { name: '1991 GMC Syclone',                  hp: 280,  z60: 4.3,  qmile: 13.2, r60100:  8.2 },
+  { name: '1992 GMC Typhoon',                  hp: 280,  z60: 5.3,  qmile: 13.8, r60100:  9.2 },
+  { name: '1991 Firebird Formula (L98)',        hp: 240,  z60: 6.1,  qmile: 14.5, r60100: 11.0 },
+  { name: '1992 Firebird Formula Firehawk',    hp: 350,  z60: 5.0,  qmile: 13.5, r60100:  9.0 },
+  { name: 'Hawks Stage 1 Firehawk',            hp: 600,  z60: 2.9,  qmile: 11.4, r60100:  5.5 },
+  { name: 'Hawks Stage 2 Firehawk',            hp: 700,  z60: 2.4,  qmile: 10.4, r60100:  4.7 },
 ];
 
 // ---- Estimate performance times from HP + weight ----
